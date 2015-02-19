@@ -24,8 +24,12 @@ Here is a checklist of things you should verify (and know how to verify) before 
 
 There are three steps you should take in the process, each of which is more dangerous than the previous.
 
-#### Install connector
-Installation of ``connector`` and verifying that it works is relatively safe. Copy it to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specified in ``/jci/sm/sm.conf`` (I chose to add it to ``/jci/scripts/stage_gap2.sh``). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient.
+##### Install connector
+Installation of ``connector`` and verifying that it works is relatively safe. Add an entry for the service into ``/jci/bds/BdsConfiguration.xml``:
+```
+    <serialPort id="8017" name="Mazda Connector" critical="false" enabled="true" uuidServer="62306C7457064375BB48212331070361" uuidClient="62306C7457064375BB48212331070361" writeDelay="3"/>
+```
+Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specified in ``/jci/sm/sm.conf`` (I chose to add it to ``/jci/scripts/stage_gap2.sh``). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient to verify functionality.
 
 #### Verify that input_filter works
 Copy input_filter onto the system (preferably ``/tmp/mnt/data``) and create the file ``/tmp/mnt/data/enable_input_filter`` containing '1'. On startup, ``input_filter`` will search for this file, only do stuff if it contains 1, and then set it to 0 before continuing. That way, if things go horribly wrong and the subsequent processes trigger a reboot, it hopefully won't endlessly reboot. Run ``input_filter`` and press the voice recognition button, and you should see logs saying something to that effect. You'll also notice that the infotainment interface is basically completely broken, and will probably reboot shortly.
