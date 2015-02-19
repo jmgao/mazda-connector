@@ -11,7 +11,7 @@ A daemon that handles connecting to the Android application through the system's
 A daemon that runs before any of the system's input reading services start, which filters out specific button presses (currently only the steering wheel talk button) and triggers events.
 
 ### Building
-Building the connector and input filter components requires an ARM cross-compilation toolchain with a relatively new version of gcc (C++11 support is required), glibc 2.11, libdbus, boost, and probably some more stuff eventually. [ninja](http://martine.github.io/ninja/) is also required, because I'm too lazy to write a makefile. The android app is built with [sbt](http://www.scala-sbt.org/download.html).
+Building the connector and input filter components requires an ARM cross-compilation toolchain with a relatively new version of gcc (C++11 support is required), glibc 2.11, libdbus, boost headers. A toolchain built for Ubuntu 14.10 is available [here](https://github.com/jmgao/m3-toolchain). [ninja](http://martine.github.io/ninja/) is also required, because I'm too lazy to write a makefile. The android app is built with [sbt](http://www.scala-sbt.org/download.html).
 
 ### Installation
 **WARNING**: DO NOT DO THIS UNLESS YOU KNOW WHAT YOU ARE DOING.<br/>
