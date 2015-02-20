@@ -21,7 +21,7 @@
 #define HMI_BUS_ADDRESS "unix:path=/tmp/dbus_hmi_socket"
 
 constexpr char source_device[] = "/dev/input/event1";
-constexpr char filtered_name[] = "hacky-filtered-keyboard0";
+constexpr char filtered_name[] = "Virtual Keyboard";
 
 // HACK: There doesn't seem to be a good way to get the path of the device
 //       The UI_GET_SYSNAME ioctl requires kernel 3.15+
@@ -140,12 +140,15 @@ static void initialize(void)
         err(1, "couldn't stat created device");
     }
 
+    // HACK: Wait for udev to populate /dev/input/
+    sleep(1);
+
     if (::unlink(source_device) != 0) {
         err(1, "failed to unlink source device '%s'", source_device);
     }
 
-    if (::symlink(new_device_path, source_device) != 0) {
-        err(1, "failed to create symlink for new device");
+    if (::rename(new_device_path, source_device) != 0) {
+        err(1, "failed to move new device");
     }
 
     destroy_device(dummies[0]);
