@@ -46,9 +46,7 @@ We want ``input_filter`` to run immediately before the process which handles inp
 ### License
 AGPLv3
 
-
-
-#### Footnotes
+--
 <a name="1"/>1. Placeholder name until I can think of something better; Mazda please don't sue me <br />
 <a name="2"/>2. Currently only tested with the 2014 Mazda 3
 
