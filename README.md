@@ -24,15 +24,18 @@ Here is a checklist of things you should verify (and know how to verify) before 
 
 There are three steps you should take in the process, each of which is more dangerous than the previous.
 
+##### Bootloop prevention
+Several of the services on the infotainment system will cause a reboot of the system if they fail. If this happens during the boot sequence because one of the daemons added by us has broken some invariant expected by the services, it will probably enter an endless bootloop which you won't be able to fix with ssh. To prevent this, both `connector` and `input_filter` are controlled by the `enable_connector` and `enable_input_filter` files in /tmp/mnt/data. The daemons will check these files on startup for '1' to decide whether to do stuff, and set them to '0' before continuing. If they happen to break things and cause a reboot, they'll do nothing on next boot, preventing Bad Things from happening. When you have everything working after a successful boot, setting the files to contain '2' will prevent them from disabling themselves on future boots.
+
 ##### Install connector
 Installation of ``connector`` and verifying that it works is relatively safe. Add an entry for the service into ``/jci/bds/BdsConfiguration.xml``:
 ```
     <serialPort id="8017" name="Mazda Connector" critical="false" enabled="true" uuidServer="62306C7457064375BB48212331070361" uuidClient="62306C7457064375BB48212331070361" writeDelay="3"/>
 ```
-Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specified in ``/jci/sm/sm.conf`` (I chose to add it to ``/jci/scripts/stage_gap2.sh``). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient to verify functionality.
+Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specificed in ``/jci/sm/sm.conf``, such as ``/jci/scripts/stage_gap2.sh``. (Make sure to background the process!). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient to verify functionality. (Currently, connector is pretty much completely safe, so you can set ``enable_connector`` to '2' from the start. This may not be true in the future, so on upgrades, you should probably always be setting the values for both daemons to '1')
 
 #### Verify that input_filter works
-Copy input_filter onto the system (preferably ``/tmp/mnt/data``) and create the file ``/tmp/mnt/data/enable_input_filter`` containing '1'. On startup, ``input_filter`` will search for this file, only do stuff if it contains 1, and then set it to 0 before continuing. That way, if things go horribly wrong and the subsequent processes trigger a reboot, it hopefully won't endlessly reboot. Run ``input_filter`` and press the voice recognition button, and you should see logs saying something to that effect. You'll also notice that the infotainment interface is basically completely broken, and will probably reboot shortly.
+Copy input_filter onto the system (preferably ``/tmp/mnt/data``), run ``input_filter`` and press the voice recognition button, and you should see logs saying something to that effect. You'll also probably notice that the infotainment interface is broken, and will probably reboot shortly.
 
 #### Add input_filter to the startup manifest
 This is the scary part: if you mess up here, you've bricked your car. Edit the ``/jci/sm/sm.conf`` file to add ``input_filter`` to the startup sequence.
@@ -41,7 +44,15 @@ This is the scary part: if you mess up here, you've bricked your car. Edit the `
         <dependency type="service" value="settings"/>
     </service>
 ```
-We want ``input_filter`` to run immediately before the process which handles input, which is ``devices``. Therefore, we need to change it to depend on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> After modifying sm.conf and triple checking that it's correct and no mistaken changes have been made, reboot with '1' in ``/tmp/mnt/data/enable_input_filter``, and the voice recognition button should no longer trigger the stock voice prompt. Change the value to '2', and it'll stop resetting it to '0' on every boot.
+We want ``input_filter`` to run immediately before the first process which consumes input, which is ``devices``. Therefore, we need to change it to depend on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> 
+```
+    <service type="jci_service" name="devices" path="/jci/devices/svc-com-jci-cpp-devices.so" autorun="yes" retry_count="0" args="" reset_board="yes" affinity_mask="0x02">
+        <dependency type="service" value="stage_1"/>
+        <dependency type="service" value="settings"/>
+>>>     <dependency type="service" value="input_filter"/>
+    </service>
+```
+After modifying sm.conf and triple checking that it's correct and no mistaken changes have been made, reboot with '1' in ``/tmp/mnt/data/enable_input_filter`` (since running it in the previous step would have changed it to '0'), and the voice recognition button should no longer trigger the stock voice prompt. At this point, everything is probably working, so you should be able to enable both services permanently.
 
 ### License
 AGPLv3
