@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include <linux/input.h>
@@ -29,7 +30,7 @@ constexpr char new_device_path[] = "/dev/input/event6";
 static int infd = -1;
 static int outfd = -1;
 
-using matcher_fn_t = std::function<bool (const struct input_event &)>;
+using matcher_fn_t = std::function<bool (const struct input_event *)>;
 static std::vector<matcher_fn_t> matchers;
 
 static void destroy_device(int fd)
@@ -174,28 +175,40 @@ static void __attribute__((noreturn)) loop(void)
         err(1, "failed to add input fd to epoll set");
     }
 
+    constexpr size_t buffer_size = 64;
+    std::vector<struct iovec> iovecs;
+    iovecs.reserve(buffer_size);
     while (epoll_wait(epfd, &event, 1, -1) >= 0) {
         switch (events(event.data.u64)) {
             case events::input:
             {
-                struct input_event ev;
-                if (::read(infd, &ev, sizeof ev) != sizeof ev) {
+                iovecs.clear();
+                struct input_event ev_buf[buffer_size];
+                ssize_t bytes_read = ::read(infd, &ev_buf, sizeof ev_buf);
+                if (bytes_read <= 0 || bytes_read % sizeof(struct input_event) != 0) {
                     err(1, "failed to read event");
                 }
 
-                bool matched = false;
-                for (const auto &matcher : matchers) {
-                    if (matcher(ev)) {
-                        matched = true;
-                        break;
+                ssize_t events_read = bytes_read / sizeof (struct input_event);
+                for (int i = 0; i < events_read; ++i) {
+                    struct input_event *ev = &ev_buf[i];
+                    bool matched = false;
+                    for (const auto &matcher : matchers) {
+                        if (matcher(ev)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!matched) {
+                        iovecs.push_back({
+                            .iov_base = ev,
+                            .iov_len = sizeof (struct input_event)
+                        });
                     }
                 }
 
-                if (!matched) {
-                    if(::write(outfd, &ev, sizeof ev) != sizeof ev) {
-                        err(1, "failed to write unmatched event");
-                    }
-                }
+                ::writev(outfd, iovecs.data(), iovecs.size());
             }
         }
     }
@@ -248,12 +261,12 @@ int main(int argc, const char *argv[])
     }
 
     matchers.push_back(
-        [hmi_bus] (const struct input_event &ev) {
+        [hmi_bus] (const struct input_event *ev) {
             // Talk button
-            if (ev.type == EV_KEY && ev.code == KEY_G) {
-                printf("received talk button, status = %d\n", ev.value);
+            if (ev->type == EV_KEY && ev->code == KEY_G) {
+                printf("received talk button, status = %d\n", ev->value);
 
-                if (ev.value == 1) {
+                if (ev->value == 1) {
                     DBusMessage *msg = dbus_message_new_signal(
                         "/us/insolit/mazda/connector", "us.insolit.mazda.connector", "TriggerVR");
 
