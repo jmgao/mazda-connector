@@ -30,7 +30,7 @@ Several of the services on the infotainment system will cause a reboot of the sy
 ##### Install connector
 Installation of ``connector`` and verifying that it works is relatively safe. Add an entry for the service into ``/jci/bds/BdsConfiguration.xml``:
 ```
-    <serialPort id="8017" name="Mazda Connector" critical="false" enabled="true" uuidServer="62306C7457064375BB48212331070361" uuidClient="62306C7457064375BB48212331070361" writeDelay="3"/>
+<serialPort id="8017" name="Mazda Connector" critical="false" enabled="true" uuidServer="62306C7457064375BB48212331070361" uuidClient="62306C7457064375BB48212331070361" writeDelay="3"/>
 ```
 Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specificed in ``/jci/sm/sm.conf``, such as ``/jci/scripts/stage_gap2.sh``. (Make sure to background the process!). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient to verify functionality. (Currently, connector is pretty much completely safe, so you can set ``enable_connector`` to '2' from the start. This may not be true in the future, so on upgrades, you should probably always be setting the values for both daemons to '1')
 
@@ -40,17 +40,17 @@ Copy input_filter onto the system (preferably ``/tmp/mnt/data``), run ``input_fi
 #### Add input_filter to the startup manifest
 This is the scary part: if you mess up here, you've bricked your car. Edit the ``/jci/sm/sm.conf`` file to add ``input_filter`` to the startup sequence.
 ```
-    <service type="process" name="input_filter" path="/tmp/mnt/data/input_filter" autorun="yes" reset_board="no" retry_count="0">
-        <dependency type="service" value="settings"/>
-    </service>
+<service type="process" name="input_filter" path="/tmp/mnt/data/input_filter" autorun="yes" reset_board="no" retry_count="0">
+    <dependency type="service" value="settings"/>
+</service>
 ```
 We want ``input_filter`` to run immediately before the first process which consumes input, which is ``devices``. Therefore, we need to change it to depend on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> 
 ```
-    <service type="jci_service" name="devices" path="/jci/devices/svc-com-jci-cpp-devices.so" autorun="yes" retry_count="0" args="" reset_board="yes" affinity_mask="0x02">
-        <dependency type="service" value="stage_1"/>
-        <dependency type="service" value="settings"/>
->>>     <dependency type="service" value="input_filter"/>
-    </service>
+<service type="jci_service" name="devices" path="/jci/devices/svc-com-jci-cpp-devices.so" autorun="yes" retry_count="0" args="" reset_board="yes" affinity_mask="0x02">
+    <dependency type="service" value="stage_1"/>
+    <dependency type="service" value="settings"/>
+>>> <dependency type="service" value="input_filter"/>
+</service>
 ```
 After modifying sm.conf and triple checking that it's correct and no mistaken changes have been made, reboot with '1' in ``/tmp/mnt/data/enable_input_filter`` (since running it in the previous step would have changed it to '0'), and the voice recognition button should no longer trigger the stock voice prompt. At this point, everything is probably working, so you should be able to enable both services permanently.
 
