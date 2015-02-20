@@ -11,9 +11,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
-import android.content.{ComponentName, Intent}
+import android.content.Intent
 import android.util.Log
-import android.os.{AsyncTask, Handler, IBinder, Looper}
+import android.os.{Handler, IBinder, Looper}
 
 class BluetoothService extends Service {
   // FIXME: Move this somewhere else
@@ -32,8 +32,6 @@ class BluetoothService extends Service {
       val uuid = UUID.fromString(getString(R.string.google_now_uuid))
       val serverSocket = adapter.listenUsingRfcommWithServiceRecord("google_now", uuid);
 
-      val googleNowComponent = new ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.VoiceSearchActivity")
-      val googleNowIntent = new Intent().setComponent(googleNowComponent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
       while (true) {
         val socket = serverSocket.accept()
@@ -61,12 +59,8 @@ class BluetoothService extends Service {
                 throw new IOException("BluetoothSocket returned short when reading data")
               }
 
-              os.write(("received " + length).getBytes(Charset.forName("UTF-8")))
-
               // TODO: specify an actual format and use it instead of doing this blindly
-              runOnMainThread {
-                startActivity(googleNowIntent)
-              }
+              WakeUpActivity.start(this)
             }
           } catch {
             case ex : Throwable => Log.e("MazdaConnector", "Received exception", ex)
