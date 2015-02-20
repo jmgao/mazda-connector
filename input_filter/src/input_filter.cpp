@@ -260,6 +260,7 @@ int main(int argc, const char *argv[])
                     }
 
                     dbus_connection_flush(hmi_bus);
+                    dbus_message_unref(msg);
                 }
                 return true;
             }
