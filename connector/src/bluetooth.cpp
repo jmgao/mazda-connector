@@ -11,7 +11,7 @@
 
 #include <dbus/dbus.h>
 #include "bluetooth.hpp"
-#include "connector.hpp"
+#include "dbus.hpp"
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)

@@ -5,7 +5,7 @@
 
 #include <dbus/dbus.h>
 
-#include "connector.hpp"
+#include "dbus.hpp"
 #include "navigation.hpp"
 
 void GuidanceChanged(
@@ -107,6 +107,7 @@ uint8_t SetHUDDisplayMsgReq(
     dbus_connection_flush(service_bus);
     dbus_message_unref(msg);
 
+    dbus_pending_call_block(pending);
     msg = dbus_pending_call_steal_reply(pending);
     if (!msg) {
        assert(false && "received null reply");

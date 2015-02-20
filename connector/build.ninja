@@ -5,7 +5,7 @@ cxxflags = -std=c++11 -static-libstdc++ -Isrc -Os -Wall -Wextra -Wno-unused-para
 ldflags = -static-libstdc++
 
 sysroot = /opt/toolchain/arm-cortexa9_neon-linux-gnueabi/sysroot
-headers = -I$sysroot/usr/include/dbus-1.0 -I$sysroot/usr/lib/dbus-1.0/include
+headers = -I../shared -I$sysroot/usr/include/dbus-1.0 -I$sysroot/usr/lib/dbus-1.0/include
 
 rule cxx
   command = $cxx -MMD -MT $out -MF $out.d $cxxflags $headers -c $in -o $out
@@ -18,9 +18,10 @@ rule link
 
 build $builddir/bluetooth.o: cxx src/bluetooth.cpp
 build $builddir/connector.o: cxx src/connector.cpp
+build $builddir/dbus.o: cxx src/dbus.cpp
 build $builddir/navigation.o: cxx src/navigation.cpp
 
-build connector: link $builddir/bluetooth.o $builddir/connector.o $builddir/navigation.o
+build connector: link $builddir/bluetooth.o $builddir/connector.o $builddir/dbus.o $builddir/navigation.o
   libs = -ldbus-1
 
 default connector

@@ -11,17 +11,13 @@
 
 #include <dbus/dbus.h>
 
+#include "prevent_brick.hpp"
+
 #include "bluetooth.hpp"
-#include "connector.hpp"
+#include "dbus.hpp"
 #include "navigation.hpp"
 
-DBusConnection *service_bus;
-DBusConnection *hmi_bus;
-
 std::atomic<int> btfd { -1 };
-
-#define SERVICE_BUS_ADDRESS "unix:path=/tmp/dbus_service_socket"
-#define HMI_BUS_ADDRESS "unix:path=/tmp/dbus_hmi_socket"
 
 static DBusHandlerResult handle_service_message(DBusConnection *, DBusMessage *message, void *)
 {
@@ -54,33 +50,12 @@ static DBusHandlerResult handle_hmi_message(DBusConnection *, DBusMessage *messa
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
-static void initialize_dbus(void)
+static void register_signals(void)
 {
-    dbus_threads_init_default();
-
     DBusError error;
     dbus_error_init(&error);
 
-    // Initialize service bus
-    service_bus = dbus_connection_open(SERVICE_BUS_ADDRESS, &error);
-    if (!service_bus) {
-        errx(1, "failed to connect to service bus: %s: %s\n", error.name, error.message);
-    }
-
-    if (!dbus_bus_register(service_bus, &error)) {
-        errx(1, "failed to register with service bus: %s: %s\n", error.name, error.message);
-    }
     dbus_connection_add_filter(service_bus, handle_service_message, nullptr, nullptr);
-
-    // Initialize HMI bus
-    hmi_bus = dbus_connection_open(HMI_BUS_ADDRESS, &error);
-    if (!hmi_bus) {
-        errx(1, "failed to connect to HMI bus: %s: %s\n", error.name, error.message);
-    }
-
-    if (!dbus_bus_register(hmi_bus, &error)) {
-        errx(1, "failed to register with HMI bus: %s: %s\n", error.name, error.message);
-    }
     dbus_connection_add_filter(hmi_bus, handle_hmi_message, nullptr, nullptr);
 
     // Bluetooth ConnectionStatusResp
@@ -93,22 +68,15 @@ static void initialize_dbus(void)
     if (dbus_error_is_set(&error)) {
         errx(1, "failed to add ConnectionStatusResp match: %s: %s\n", error.name, error.message);
     }
-
-    std::thread service_thread([]() {
-        while (dbus_connection_read_write_dispatch(service_bus, -1));
-    });
-
-    std::thread hmi_thread([]() {
-        while (dbus_connection_read_write_dispatch(hmi_bus, -1));
-    });
-
-    service_thread.detach();
-    hmi_thread.detach();
 }
 
 int main(void)
 {
+    // Try not to brick the car
+    prevent_brick("/tmp/connector_failure_reason", "/tmp/mnt/data/enable_connector");
+
     initialize_dbus();
+    register_signals();
 
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
