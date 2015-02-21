@@ -243,8 +243,10 @@ int main(int argc, const char *argv[])
 
     matchers.push_back(
         [hmi_bus] (const struct input_event *ev) {
+            constexpr int key_code = KEY_G;
+
             // Talk button
-            if (ev->type == EV_KEY && ev->code == KEY_G) {
+            if (ev->type == EV_KEY && ev->code == key_code) {
                 printf("received talk button, status = %d\n", ev->value);
 
                 if (ev->value == 1) {

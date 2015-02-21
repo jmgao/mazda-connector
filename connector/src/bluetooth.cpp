@@ -70,14 +70,10 @@ std::shared_future<int> bluetooth_connect(bluetooth_device_id_t device_id, bluet
         assert(false && "failed to create message");
     }
 
-    DBusMessageIter iter;
-    dbus_message_iter_init_append(msg, &iter);
-    if (!dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &service_id)) {
-       assert(false && "failed to append service id to message");
-    }
-
-    if (!dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &device_id)) {
-       assert(false && "failed to append device id to message");
+    if (!dbus_message_append_args(msg, DBUS_TYPE_UINT32, &service_id,
+                                       DBUS_TYPE_UINT32, &device_id,
+                                       DBUS_TYPE_INVALID)) {
+       assert(false && "failed to append arguments to message");
     }
 
     if (!dbus_connection_send_with_reply(hmi_bus, msg, &pending, -1)) {
@@ -93,18 +89,11 @@ std::shared_future<int> bluetooth_connect(bluetooth_device_id_t device_id, bluet
        assert(false && "[" STRINGIFY(__LINE__) "]: received null reply");
     }
 
-    DBusMessageIter args;
-
-    if (!dbus_message_iter_init(msg, &args)) {
-        assert(false && "[" STRINGIFY(__LINE__) "]: received empty reply");
-    }
-
-    if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_INT32) {
-        errx(1, "[" STRINGIFY(__LINE__) "]: received unexpected type: %c\n", dbus_message_iter_get_arg_type(&args));
-    }
-
     dbus_int32_t result;
-    dbus_message_iter_get_basic(&args, &result);
+    if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_INT32, &result,
+                                             DBUS_TYPE_INVALID)) {
+        assert(false && "failed to get result");
+    }
     dbus_message_unref(msg);
 
     if (result != 100) {

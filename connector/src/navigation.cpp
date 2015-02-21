@@ -113,19 +113,12 @@ uint8_t SetHUDDisplayMsgReq(
        assert(false && "received null reply");
     }
 
-    DBusMessageIter args;
-
-    if (!dbus_message_iter_init(msg, &args)) {
-        assert(false && "received empty reply");
-    }
-
-    if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_BYTE) {
-        fprintf(stderr, "received unexpected type: %d\n", dbus_message_iter_get_arg_type(&args));
-        exit(1);
-    }
-
     uint8_t result;
-    dbus_message_iter_get_basic(&args, &result);
+    if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_BYTE, &result,
+                                             DBUS_TYPE_INVALID)) {
+        assert(false && "failed to get result");
+    }
+
     dbus_message_unref(msg);
 
     return result;
