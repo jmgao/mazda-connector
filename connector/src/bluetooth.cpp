@@ -10,11 +10,10 @@
 #include <mutex>
 
 #include <dbus/dbus.h>
+
+#include "shared/stringify.h"
 #include "bluetooth.hpp"
 #include "dbus.hpp"
-
-#define _STRINGIFY(x) #x
-#define STRINGIFY(x) _STRINGIFY(x)
 
 static std::mutex connections_mutex;
 
@@ -220,6 +219,10 @@ void handle_bluetooth_connection_response(DBusMessage *msg)
 
         case 104:
             printf("service not found? (check BdsConfiguration.xml\n");
+            break;
+
+        case 107:
+            printf("device not connected?\n");
             break;
 
         case 108:

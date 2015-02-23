@@ -10,8 +10,10 @@
 #include <vector>
 
 #include <dbus/dbus.h>
+#include <linux/input.h>
 
-#include "prevent_brick.hpp"
+#include "shared/dbus_helpers.hpp"
+#include "shared/prevent_brick.hpp"
 
 #include "bluetooth.hpp"
 #include "dbus.hpp"
@@ -29,19 +31,31 @@ static DBusHandlerResult handle_hmi_message(DBusConnection *, DBusMessage *messa
     if (strcmp("ConnectionStatusResp", dbus_message_get_member(message)) == 0) {
         handle_bluetooth_connection_response(message);
         return DBUS_HANDLER_RESULT_HANDLED;
-    } else if (strcmp("TriggerVR", dbus_message_get_member(message)) == 0) {
-        int fd = btfd.load();
-        if (fd < 0) {
-            printf("Can't trigger voice recognition, not yet connected\n");
-        } else {
-            printf("Triggering voice recognition, writing to fd %d\n", fd);
-            std::string command = "TriggerVR";
-            std::vector<char> buf(command.length() + sizeof(uint32_t));
-            *(uint32_t *)&buf[0] = command.length();
-            memcpy(&buf[4], command.c_str(), command.length());
+    } else if (strcmp("KeyEvent", dbus_message_get_member(message)) == 0) {
+        DBusMessageIter iter;
+        if (!dbus_message_iter_init(message, &iter)) {
+            errx(1, "failed to open message iterator for reading KeyEvent message");
+        }
 
-            printf("writing %d bytes\n", buf.size());
-            ::write(fd, &buf[0], buf.size());
+        struct input_event event;
+        if (!dbus_message_decode_input_event(&iter, &event)) {
+            errx(1, "failed to get input event from KeyEvent message");
+        }
+
+        if (event.code == KEY_G && event.value == 1) {
+            int fd = btfd.load();
+            if (fd < 0) {
+                printf("Can't trigger voice recognition, not yet connected\n");
+            } else {
+                printf("Triggering voice recognition, writing to fd %d\n", fd);
+                std::string command = "TriggerVR";
+                std::vector<char> buf(command.length() + sizeof(uint32_t));
+                *(uint32_t *)&buf[0] = command.length();
+                memcpy(&buf[4], command.c_str(), command.length());
+
+                printf("writing %d bytes\n", buf.size());
+                ::write(fd, &buf[0], buf.size());
+            }
         }
 
         return DBUS_HANDLER_RESULT_HANDLED;
@@ -64,9 +78,9 @@ static void register_signals(void)
         errx(1, "failed to add ConnectionStatusResp match: %s: %s\n", error.name, error.message);
     }
 
-    dbus_bus_add_match(hmi_bus, "type='signal',interface='us.insolit.mazda.connector',member='TriggerVR'", &error);
+    dbus_bus_add_match(hmi_bus, "type='signal',interface='us.insolit.mazda.connector',member='KeyEvent'", &error);
     if (dbus_error_is_set(&error)) {
-        errx(1, "failed to add ConnectionStatusResp match: %s: %s\n", error.name, error.message);
+        errx(1, "failed to add KeyEvent match: %s: %s\n", error.name, error.message);
     }
 }
 

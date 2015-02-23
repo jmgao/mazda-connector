@@ -5,7 +5,7 @@ cxxflags = -std=c++11 -static-libstdc++ -Isrc -Os -Wall -Wextra -Wno-unused-para
 ldflags = -static-libstdc++
 
 sysroot = /opt/toolchain/arm-cortexa9_neon-linux-gnueabi/sysroot
-headers = -I../shared -I$sysroot/usr/include/dbus-1.0 -I$sysroot/usr/lib/dbus-1.0/include
+headers = -I.. -I$sysroot/usr/include/dbus-1.0 -I$sysroot/usr/lib/dbus-1.0/include
 
 rule cxx
   command = $cxx -MMD -MT $out -MF $out.d $cxxflags $headers -c $in -o $out

@@ -18,7 +18,8 @@
 
 #include <dbus/dbus.h>
 
-#include "prevent_brick.hpp"
+#include "shared/dbus_helpers.hpp"
+#include "shared/prevent_brick.hpp"
 
 #define HMI_BUS_ADDRESS "unix:path=/tmp/dbus_hmi_socket"
 
@@ -249,21 +250,27 @@ int main(int argc, const char *argv[])
             if (ev->type == EV_KEY && ev->code == key_code) {
                 printf("received talk button, status = %d\n", ev->value);
 
-                if (ev->value == 1) {
-                    DBusMessage *msg = dbus_message_new_signal(
-                        "/us/insolit/mazda/connector", "us.insolit.mazda.connector", "TriggerVR");
+                DBusMessage *msg = dbus_message_new_signal(
+                    "/us/insolit/mazda/connector", "us.insolit.mazda.connector", "KeyEvent");
 
-                    if (!msg) {
-                        errx(1, "failed to create dbus message");
-                    }
-
-                    if (!dbus_connection_send(hmi_bus, msg, nullptr)) {
-                        errx(1, "failed to send dbus message");
-                    }
-
-                    dbus_connection_flush(hmi_bus);
-                    dbus_message_unref(msg);
+                if (!msg) {
+                    errx(1, "failed to create dbus message");
                 }
+
+                DBusMessageIter iter;
+                dbus_message_iter_init_append(msg, &iter);
+
+                if (!dbus_message_encode_input_event(&iter, ev)) {
+                    errx(1, "failed to append input event");
+                }
+
+                if (!dbus_connection_send(hmi_bus, msg, nullptr)) {
+                    errx(1, "failed to send dbus message");
+                }
+
+                dbus_connection_flush(hmi_bus);
+                dbus_message_unref(msg);
+
                 return true;
             }
 
