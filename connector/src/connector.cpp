@@ -73,7 +73,7 @@ static void register_signals(void)
 int main(void)
 {
     // Try not to brick the car
-    prevent_brick("/tmp/connector_failure_reason", "/tmp/mnt/data/enable_connector");
+    prevent_brick("/tmp/mnt/data/enable_connector");
 
     initialize_dbus();
     register_signals();

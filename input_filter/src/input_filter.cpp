@@ -224,7 +224,7 @@ static void __attribute__((noreturn)) loop(void)
 int main(int argc, const char *argv[])
 {
     // Try not to brick the car
-    prevent_brick("/tmp/input_filter_failure_reason", "/tmp/mnt/data/enable_input_filter");
+    prevent_brick("/tmp/mnt/data/enable_input_filter");
 
     // BEGIN SCARY STUFF:
     initialize();
