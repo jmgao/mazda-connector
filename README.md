@@ -1,4 +1,6 @@
 # Mazda Connector<sup>[[1]](#1)</sup>
+
+[![Join the chat at https://gitter.im/jmgao/mazda-connector](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jmgao/mazda-connector?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Mazda Connector is a collection of binaries to augment the functionality of the MZD Connect infotainment system on Mazda's current line of cars.<sup>[[2]](#2)</sup>&nbsp; Currently, there are three components: an Android application (``android``), a server binary which runs on the infotainment system (``connector``), and an input capturing binary (``input_filter``) that does a bunch of gross hacks to capture input from the steering wheel/commander knob before it hits the system.
 ### Components
 ##### Android
