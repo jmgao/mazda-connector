@@ -1,0 +1,36 @@
+builddir = build
+cxx = arm-cortexa9_neon-linux-gnueabi-g++
+ar = arm-cortexa9_neon-linux-gnueabi-ar
+cxxflags = -std=c++11 -static-libstdc++ -Isrc -Os -Wall -Wextra -Wno-unused-parameter -fdiagnostics-color
+ldflags = -static-libstdc++
+
+sysroot = /opt/toolchain/arm-cortexa9_neon-linux-gnueabi/sysroot
+headers = -I. -I$sysroot/usr/include/dbus-1.0 -I$sysroot/usr/lib/dbus-1.0/include
+
+rule cxx
+  command = $cxx -MMD -MT $out -MF $out.d $cxxflags $headers -c $in -o $out
+  description = CXX $out
+  depfile = $out.d
+
+rule link
+  command = $cxx $ldflags -o $out $in $libs
+  description = LINK $out
+
+
+# connector
+build $builddir/connector/bluetooth.o: cxx src/connector/bluetooth.cpp
+build $builddir/connector/connector.o: cxx src/connector/connector.cpp
+build $builddir/connector/dbus.o: cxx src/connector/dbus.cpp
+build $builddir/connector/navigation.o: cxx src/connector/navigation.cpp
+
+build connector: link $builddir/connector/bluetooth.o $builddir/connector/connector.o $builddir/connector/dbus.o $builddir/connector/navigation.o
+  libs = -ldbus-1
+
+
+# input_filter
+build $builddir/input_filter/input_filter.o: cxx src/input_filter/input_filter.cpp
+
+build input_filter: link $builddir/input_filter/input_filter.o
+  libs = -ldbus-1
+
+default input_filter connector
