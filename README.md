@@ -19,7 +19,7 @@ _**THIS CAN BRICK YOUR INFOTAINMENT SYSTEM IF YOU ARE UNLUCKY OR UNCAREFUL.**_<b
 Here is a checklist of things you should verify (and know how to verify) before even thinking of installing this:
 
 1. ``/dev/input/event1`` exists and is the virtual keyboard device.
-2. ``/dev/input/event5`` is the last event device in ``/dev/event``.
+2. ``/dev/input/event5`` is the last event device in ``/dev/input``.
 3. KEY_G is the voice recognition button on your steering wheel.
 
 ##### Bootloop prevention
@@ -38,11 +38,11 @@ Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of 
 ##### Add input_filter to the startup manifest
 This is the scary part: if you mess up here, you've bricked your car. Edit the ``/jci/sm/sm.conf`` file to add ``input_filter`` to the startup sequence.
 ```
-<service type="process" name="input_filter" path="/tmp/mnt/data/input_filter" autorun="yes" reset_board="no" retry_count="0">
+<service type="process" name="input_filter" path="/tmp/mnt/data/input_filter" autorun="yes" reset_board="no" retry_count="0" affinity_mask="0x02">
     <dependency type="service" value="settings"/>
 </service>
 ```
-We want ``input_filter`` to run immediately before the first process which consumes input, which is ``devices``. Therefore, we need to change it to depend on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> 
+We want ``input_filter`` to run immediately before the first process which consumes input, which is ``devices``. Therefore, we need to add a dependency for it on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> 
 ```
 <service type="jci_service" name="devices" path="/jci/devices/svc-com-jci-cpp-devices.so" autorun="yes" retry_count="0" args="" reset_board="yes" affinity_mask="0x02">
     <dependency type="service" value="stage_1"/>
