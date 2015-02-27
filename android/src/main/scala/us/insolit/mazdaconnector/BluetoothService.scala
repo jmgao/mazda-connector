@@ -12,8 +12,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
-import android.util.Log
 import android.os.{Handler, IBinder, Looper}
+import android.speech.tts.TextToSpeech
+import android.util.Log
 
 class BluetoothService extends Service {
   // FIXME: Move this somewhere else
@@ -29,9 +30,15 @@ class BluetoothService extends Service {
     Log.v("MazdaConnector", "Service started")
     Future {
       val adapter = BluetoothAdapter.getDefaultAdapter();
-      val uuid = UUID.fromString(getString(R.string.google_now_uuid))
-      val serverSocket = adapter.listenUsingRfcommWithServiceRecord("google_now", uuid);
+      val uuid = UUID.fromString(getString(R.string.connector_uuid))
+      val serverSocket = adapter.listenUsingRfcommWithServiceRecord("connector", uuid);
 
+      val tts: TextToSpeech = new TextToSpeech(this,
+        new TextToSpeech.OnInitListener() {
+          override def onInit(status: Int) {
+          }
+        }
+      )
 
       while (true) {
         val socket = serverSocket.accept()
@@ -59,8 +66,40 @@ class BluetoothService extends Service {
                 throw new IOException("BluetoothSocket returned short when reading data")
               }
 
-              // TODO: specify an actual format and use it instead of doing this blindly
-              WakeUpActivity.start(this)
+              val packetString = new String(packet.array(), Charset.forName("UTF-8"))
+              // Expected format: <TAG>:<MSG>
+              val fields = packetString.split(":", 2)
+              if (fields.length != 2) {
+                throw new IOException("Received malformed message: " + packet)
+              }
+
+              fields(0) match {
+                case "Input" => {
+                  val input = fields(1).split(";")
+                  if (input.length != 3) {
+                    throw new IOException("Received malformed input message: " + fields(1))
+                  }
+
+                  val keycode = input(0).toInt
+                  val longPress = input(1) == "1"
+                  val tapCount = input(2).toInt
+
+                  if (longPress && tapCount == 1) {
+                    WakeUpActivity.start(this)
+                  } else {
+                    var message = "Received keycode " + input(0) + ", "
+                    if (longPress) {
+                      message += "long press "
+                    }
+                    message += "count " + input(2)
+                    tts.speak(message, TextToSpeech.QUEUE_ADD, null)
+                  }
+                }
+
+                case tag => {
+                  throw new IOException("Unhandled tag: " + tag)
+                }
+              }
             }
           } catch {
             case ex : Throwable => Log.e("MazdaConnector", "Received exception", ex)

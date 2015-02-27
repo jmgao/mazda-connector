@@ -14,6 +14,7 @@
 #include <linux/uinput.h>
 
 #include <functional>
+#include <unordered_set>
 #include <vector>
 
 #include <dbus/dbus.h>
@@ -242,12 +243,17 @@ int main(int argc, const char *argv[])
         errx(1, "failed to register with HMI bus: %s: %s\n", error.name, error.message);
     }
 
-    matchers.push_back(
-        [hmi_bus] (const struct input_event *ev) {
-            constexpr int key_code = KEY_G;
+    const std::unordered_set<int> captured_keys = {
+        // Steering wheel talk
+        KEY_G,
 
-            // Talk button
-            if (ev->type == EV_KEY && ev->code == key_code) {
+        // Console navigation
+        // KEY_R,
+    };
+
+    matchers.push_back(
+        [hmi_bus, &captured_keys] (const struct input_event *ev) {
+            if (ev->type == EV_KEY && captured_keys.count(ev->code)) {
                 printf("received talk button, status = %d\n", ev->value);
 
                 DBusMessage *msg = dbus_message_new_signal(

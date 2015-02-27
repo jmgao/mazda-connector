@@ -21,9 +21,10 @@ rule link
 build $builddir/connector/bluetooth.o: cxx src/connector/bluetooth.cpp
 build $builddir/connector/connector.o: cxx src/connector/connector.cpp
 build $builddir/connector/dbus.o: cxx src/connector/dbus.cpp
+build $builddir/connector/gesture_recognizer.o: cxx src/connector/gesture_recognizer.cpp
 build $builddir/connector/navigation.o: cxx src/connector/navigation.cpp
 
-build connector: link $builddir/connector/bluetooth.o $builddir/connector/connector.o $builddir/connector/dbus.o $builddir/connector/navigation.o
+build connector: link $builddir/connector/bluetooth.o $builddir/connector/connector.o $builddir/connector/dbus.o $builddir/connector/gesture_recognizer.o $builddir/connector/navigation.o
   libs = -ldbus-1
 
 
