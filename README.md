@@ -1,14 +1,14 @@
-# Mazda Connector<sup>[[1]](#1)</sup>
+## Mazda Connector<sup>[[1]](#1)</sup>
 Mazda Connector is a collection of binaries to augment the functionality of the MZD Connect infotainment system on Mazda's current line of cars.<sup>[[2]](#2)</sup>&nbsp; Currently, there are three components: an Android application (``android``), a server binary which runs on the infotainment system (``connector``), and an input capturing binary (``input_filter``) that does a bunch of gross hacks to capture input from the steering wheel/commander knob before it hits the system.
 ### Components
 ##### Android
-An Android application which provides a bluetooth server socket to which the car can connect for bidirectional communication. Currently, this only takes the form of triggering the Google Now voice recognition activity, but this can be easily extended.
+An Android application which provides a bluetooth server socket to which the car can connect for bidirectional communication. Currently, this is only used to capture the steering wheel talk button's input events (single press to play/pause music, long press to trigger Google Now, and other inputs (e.g. quadruple press followed by a long press) to trigger text to speech saying what you pressed), but it can be easily extended to do more interesting things.
 
 ##### Connector
 A daemon that handles connecting to the Android application through the system's native bluetooth stack, and listens to incoming events via D-BUS to tell the phone to do stuff.
 
 ##### Input Filter
-A daemon that runs before any of the system's input reading services start, which filters out specific button presses (currently only the steering wheel talk button) and triggers events.
+A daemon that runs before any of the system's input reading services start, which filters out specific button presses (currently only the steering wheel talk button) and sends the events to connector for handling.
 
 ### Building
 Building the connector and input filter components requires an ARM cross-compilation toolchain with a relatively new version of gcc (C++11 support is required), glibc 2.11, libdbus, boost headers. A toolchain built for Ubuntu 14.10 is available [here](https://github.com/jmgao/m3-toolchain). [ninja](http://martine.github.io/ninja/) is also required, because I'm too lazy to write a makefile. The android app is built with [sbt](http://www.scala-sbt.org/download.html).
