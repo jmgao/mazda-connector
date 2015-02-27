@@ -12,9 +12,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
-import android.os.{Handler, IBinder, Looper}
+import android.os.{Handler, IBinder, Looper, SystemClock}
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.view.KeyEvent
 
 class BluetoothService extends Service {
   // FIXME: Move this somewhere else
@@ -44,7 +45,6 @@ class BluetoothService extends Service {
         val socket = serverSocket.accept()
         Future {
           try {
-
             val is = socket.getInputStream()
             val os = socket.getOutputStream()
 
@@ -84,8 +84,19 @@ class BluetoothService extends Service {
                   val longPress = input(1) == "1"
                   val tapCount = input(2).toInt
 
-                  if (longPress && tapCount == 1) {
-                    WakeUpActivity.start(this)
+                  if (tapCount == 1) {
+                    if (longPress) {
+                      WakeUpActivity.start(this)
+                    } else {
+                      val time = SystemClock.uptimeMillis();
+                      val downEvent = new KeyEvent(time, time, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+                      val downIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null).putExtra(Intent.EXTRA_KEY_EVENT, downEvent)
+                      sendOrderedBroadcast(downIntent, null);
+
+                      val upEvent = new KeyEvent(time, time, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
+                      val upIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null).putExtra(Intent.EXTRA_KEY_EVENT, upEvent)
+                      sendOrderedBroadcast(upIntent, null);
+                    }
                   } else {
                     var message = "Received keycode " + input(0) + ", "
                     if (longPress) {
