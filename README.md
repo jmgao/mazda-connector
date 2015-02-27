@@ -39,7 +39,7 @@ Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of 
 This is the scary part: if you mess up here, you've bricked your car. Edit the ``/jci/sm/sm.conf`` file to add ``input_filter`` to the startup sequence.
 ```
 <service type="process" name="input_filter" path="/tmp/mnt/data/input_filter" autorun="yes" reset_board="no" retry_count="0" affinity_mask="0x02">
-    <dependency type="service" value="settings"/>
+    <dependency type="service" value="stage1"/>
 </service>
 ```
 We want ``input_filter`` to run immediately before the first process which consumes input, which is ``devices``. Therefore, we need to add a dependency for it on the ``input_filter`` service. <sup>(FIXME: Is there a race here?)</sup> 
