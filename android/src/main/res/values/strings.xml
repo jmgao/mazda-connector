@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="google_now_uuid">62306c74-5706-4375-bb48-212331070361</string>
+	<string name="connector_uuid">62306c74-5706-4375-bb48-212331070361</string>
 	<string name="app_name">Mazda Connector</string>
 </resources>

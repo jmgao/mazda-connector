@@ -27,7 +27,7 @@ class WakeUpActivity extends Activity {
 
   def startGoogleNow() {
     val googleNowComponent = new ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.VoiceSearchActivity")
-    val googleNowIntent = new Intent(Intent.ACTION_VOICE_COMMAND).setComponent(googleNowComponent)//.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    val googleNowIntent = new Intent(Intent.ACTION_VOICE_COMMAND).setComponent(googleNowComponent)
     startActivity(googleNowIntent)
   }
 
