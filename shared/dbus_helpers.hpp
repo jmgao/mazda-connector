@@ -15,8 +15,11 @@ inline bool dbus_message_encode_timeval(DBusMessageIter *iter, const struct time
     }
 
     dbus_bool_t result = TRUE;
-    result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT64, &time->tv_sec);
-    result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT64, &time->tv_usec);
+    uint64_t tv_sec = time->tv_sec;
+    uint64_t tv_usec = time->tv_usec;
+
+    result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT64, &tv_sec);
+    result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT64, &tv_usec);
 
     if (!result) {
         printf("ERROR: failed to append time data");
@@ -64,6 +67,8 @@ inline bool dbus_message_encode_input_event(DBusMessageIter *iter, const struct 
 inline bool dbus_message_decode_timeval(DBusMessageIter *iter, struct timeval *time)
 {
     DBusMessageIter sub;
+    uint64_t tv_sec = 0;
+    uint64_t tv_usec = 0;
 
     if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_STRUCT) {
         printf("[" STRINGIFY(__LINE__) "]: received unexpected type: %c\n", dbus_message_iter_get_arg_type(iter));
@@ -76,16 +81,19 @@ inline bool dbus_message_decode_timeval(DBusMessageIter *iter, struct timeval *t
         printf("[" STRINGIFY(__LINE__) "]: received unexpected type: %c\n", dbus_message_iter_get_arg_type(iter));
         return false;
     }
-    dbus_message_iter_get_basic(&sub, &time->tv_sec);
+    dbus_message_iter_get_basic(&sub, &tv_sec);
     dbus_message_iter_next(&sub);
 
     if (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_UINT64) {
         printf("[" STRINGIFY(__LINE__) "]: received unexpected type: %c\n", dbus_message_iter_get_arg_type(iter));
         return false;
     }
-    dbus_message_iter_get_basic(&sub, &time->tv_usec);
+    dbus_message_iter_get_basic(&sub, &tv_usec);
 
     dbus_message_iter_next(iter);
+
+    time->tv_sec = tv_sec;
+    time->tv_usec = tv_usec;
 
     return true;
 }
