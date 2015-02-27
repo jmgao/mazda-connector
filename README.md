@@ -33,7 +33,12 @@ Installation of ``connector`` and verifying that it works is relatively safe. Ad
 ```
 <serialPort id="8017" name="Mazda Connector" critical="false" enabled="true" uuidServer="62306C7457064375BB48212331070361" uuidClient="62306C7457064375BB48212331070361" writeDelay="3"/>
 ```
-Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specificed in ``/jci/sm/sm.conf``, such as ``/jci/scripts/stage_gap2.sh``. (Make sure to background the process!). Running it manually and checking its output to see if it successfully connects to the Android application should be sufficient to verify functionality. (Currently, connector is pretty much completely safe, so you can set ``enable_connector`` to '2' from the start. This may not be true in the future, so on upgrades, you should probably always be setting the values for both daemons to '1')
+Then, copy the binary to somewhere like ``/tmp/mnt/data``, and add it to one of the later stage start scripts specificed in ``/jci/sm/sm.conf``, such as ``/jci/scripts/stage_gap2.sh``. Changing the file to contain the following should work:
+```
+#!/bin/sh
+/tmp/mnt/data/connector > /tmp/mnt/data/connector.log 2>&1 &
+``` 
+Currently, connector is pretty much completely safe, so you can set ``enable_connector`` to '2' from the start. This may not be true in the future, so on upgrades, you should probably always be setting the values for both daemons to '1')
 
 ##### Add input_filter to the startup manifest
 This is the scary part: if you mess up here, you've bricked your car. Edit the ``/jci/sm/sm.conf`` file to add ``input_filter`` to the startup sequence.
