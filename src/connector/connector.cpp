@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -17,9 +18,13 @@
 
 #include "bluetooth.hpp"
 #include "dbus.hpp"
+#include "gesture_recognizer.hpp"
 #include "navigation.hpp"
 
-std::atomic<int> btfd { -1 };
+static void handle_input(gesture input);
+
+static std::atomic<int> btfd { -1 };
+static gesture_recognizer recognizer(handle_input);
 
 static DBusHandlerResult handle_service_message(DBusConnection *, DBusMessage *message, void *)
 {
@@ -42,26 +47,33 @@ static DBusHandlerResult handle_hmi_message(DBusConnection *, DBusMessage *messa
             errx(1, "failed to get input event from KeyEvent message");
         }
 
-        if (event.code == KEY_G && event.value == 1) {
-            int fd = btfd.load();
-            if (fd < 0) {
-                printf("Can't trigger voice recognition, not yet connected\n");
-            } else {
-                printf("Triggering voice recognition, writing to fd %d\n", fd);
-                std::string command = "TriggerVR";
-                std::vector<char> buf(command.length() + sizeof(uint32_t));
-                *(uint32_t *)&buf[0] = command.length();
-                memcpy(&buf[4], command.c_str(), command.length());
-
-                printf("writing %d bytes\n", buf.size());
-                ::write(fd, &buf[0], buf.size());
-            }
-        }
+        recognizer.handle_input(&event);
 
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
+    printf("failed to handle message with member: %s\n", dbus_message_get_member(message));
+
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static void handle_input(gesture input) {
+    int fd = btfd.load();
+    if (fd < 0) {
+        printf("Can't send input to device, not yet connected\n");
+    } else {
+        std::stringstream ss;
+        ss << "Input:" << input.keycode << ";" << int(input.long_press) << ";" << input.tap_count;
+
+        std::string command = ss.str();
+
+        printf("Sending: %s\n", command.c_str());
+
+        std::vector<char> buf(command.length() + sizeof(uint32_t));
+        *(uint32_t *)&buf[0] = command.length();
+        memcpy(&buf[4], command.c_str(), command.length());
+        ::write(fd, &buf[0], buf.size());
+    }
 }
 
 static void register_signals(void)
