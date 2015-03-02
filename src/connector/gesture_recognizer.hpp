@@ -11,7 +11,7 @@ struct gesture {
 
 class gesture_recognizer {
 public:
-    typedef std::function<void (gesture)> cb_receive_input;
+    using cb_receive_input = std::function<void (gesture)>;
 
     gesture_recognizer(const gesture_recognizer &copy) = delete;
     gesture_recognizer(gesture_recognizer &&move) = default;
