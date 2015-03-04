@@ -18,7 +18,8 @@
     </activity>
 
     <activity android:name=".WakeUpActivity"
-              android:theme="@android:style/Theme.Translucent.NoTitleBar">
+              android:theme="@android:style/Theme.Translucent.NoTitleBar"
+              android:launchMode="singleTask">
     </activity>
 
     <receiver android:name=".AutoStartReceiver"

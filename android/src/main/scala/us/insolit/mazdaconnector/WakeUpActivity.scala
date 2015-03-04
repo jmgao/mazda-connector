@@ -2,10 +2,18 @@ package us.insolit.mazdaconnector
 
 import android.app.Activity
 import android.content.{ComponentName, Context, Intent}
+import android.os.Bundle
 import android.view.WindowManager.LayoutParams
 
 class WakeUpActivity extends Activity {
-  var started = false
+  var started: Boolean = _
+
+  override def onCreate(bundle: Bundle) {
+    super.onCreate(bundle)
+
+    started = false
+  }
+
   override def onStart() {
     super.onStart()
 
@@ -18,34 +26,32 @@ class WakeUpActivity extends Activity {
     )
   }
 
+  override def onStop() {
+    super.onStop();
+    finish()
+  }
+
   override def onWindowFocusChanged(focus: Boolean) {
-    if (focus) {
-      WakeUpActivity.activity = this
+    if (focus && !started) {
+      started = true
       this.startGoogleNow()
     }
   }
 
   def startGoogleNow() {
     val googleNowComponent = new ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.VoiceSearchActivity")
-    val googleNowIntent = new Intent(Intent.ACTION_VOICE_COMMAND).setComponent(googleNowComponent)
-    startActivity(googleNowIntent)
-  }
+    val googleNowIntent = new Intent(Intent.ACTION_MAIN)
+                                .addCategory(Intent.CATEGORY_DEFAULT)
+                                .addCategory(Intent.CATEGORY_LAUNCHER)
+                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                .setComponent(googleNowComponent)
 
-  override def onDestroy() {
-    super.onDestroy()
-    WakeUpActivity.activity = null
-    finishAffinity()
+    startActivity(googleNowIntent)
   }
 }
 
 object WakeUpActivity {
-  var activity: WakeUpActivity = null
-
   def start(ctx: Context) {
-    if (activity != null) {
-      activity.startGoogleNow()
-    } else {
-      ctx.startActivity(new Intent(ctx, classOf[WakeUpActivity]).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK))
-    }
+    ctx.startActivity(new Intent(ctx, classOf[WakeUpActivity]).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP))
   }
 }
