@@ -1,4 +1,4 @@
-package us.insolit.mazdaconnector
+package us.insolit.connector
 
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -16,6 +16,9 @@ import android.os.{Handler, IBinder, Looper, SystemClock}
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.KeyEvent
+
+import us.insolit.connector.gps._
+import us.insolit.connector.vr._
 
 class BluetoothService extends Service {
   // FIXME: Move this somewhere else
@@ -96,6 +99,14 @@ class BluetoothService extends Service {
                       val upEvent = new KeyEvent(time, time, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0);
                       val upIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null).putExtra(Intent.EXTRA_KEY_EVENT, upEvent)
                       sendOrderedBroadcast(upIntent, null);
+                    }
+                  } else if (tapCount == 2) {
+                    if (!longPress) {
+                      tts.speak("Starting GPS recording", TextToSpeech.QUEUE_ADD, null)
+                      GPSRecordReceiver.start(this)
+                    } else {
+                      tts.speak("Stopping GPS recording", TextToSpeech.QUEUE_ADD, null)
+                      GPSRecordReceiver.stop()
                     }
                   } else {
                     var message = "Received keycode " + input(0) + ", "

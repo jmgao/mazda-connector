@@ -1,4 +1,4 @@
-package us.insolit.mazdaconnector
+package us.insolit.connector
 
 import android.app.Activity
 import android.content.Intent

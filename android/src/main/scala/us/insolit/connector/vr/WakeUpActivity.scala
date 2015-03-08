@@ -1,4 +1,4 @@
-package us.insolit.mazdaconnector
+package us.insolit.connector.vr
 
 import android.app.Activity
 import android.content.{ComponentName, Context, Intent}
@@ -41,10 +41,10 @@ class WakeUpActivity extends Activity {
   def startGoogleNow() {
     val googleNowComponent = new ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.VoiceSearchActivity")
     val googleNowIntent = new Intent(Intent.ACTION_MAIN)
-                                .addCategory(Intent.CATEGORY_DEFAULT)
-                                .addCategory(Intent.CATEGORY_LAUNCHER)
-                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                .setComponent(googleNowComponent)
+    googleNowIntent.addCategory(Intent.CATEGORY_DEFAULT)
+    googleNowIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+    googleNowIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    googleNowIntent.setComponent(googleNowComponent)
 
     startActivity(googleNowIntent)
   }

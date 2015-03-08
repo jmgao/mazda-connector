@@ -1,4 +1,4 @@
-package us.insolit.mazdaconnector
+package us.insolit.connector.vr
 
 import android.content.{BroadcastReceiver, Context, Intent}
 
