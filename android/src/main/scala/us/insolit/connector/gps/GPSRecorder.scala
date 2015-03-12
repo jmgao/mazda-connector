@@ -8,13 +8,11 @@ import android.location.{Criteria, Location, LocationListener, LocationManager, 
 import android.os.{Looper, Parcel}
 import android.util.Log
 
-import scala.concurrent.{Await, Promise}
-import scala.concurrent.duration.Duration
-import scala.util.Success
+import us.insolit.connector.util._
 
 class GPSRecorder(val locationManager: LocationManager, val looper: Looper) extends LocationListener {
-  var started: Boolean = false
-  var parcel: Parcel = null
+  private var started: Boolean = false
+  private var parcel: Parcel = null
 
   def start() {
     this.synchronized {
@@ -29,6 +27,19 @@ class GPSRecorder(val locationManager: LocationManager, val looper: Looper) exte
 
         val bestProvider = locationManager.getBestProvider(criteria, true)
         Log.e("GPSRecorder", "Best provider is: " + bestProvider)
+
+        val provider = locationManager.getProvider(bestProvider)
+        Log.e("GPSRecorder", bestProvider + ".getAccuracy() = " + provider.getAccuracy())
+        Log.e("GPSRecorder", bestProvider + ".getName() = " + provider.getName())
+        Log.e("GPSRecorder", bestProvider + ".getPowerRequirement() = " + provider.getPowerRequirement())
+        Log.e("GPSRecorder", bestProvider + ".hasMonetaryCost() = " + provider.hasMonetaryCost())
+        Log.e("GPSRecorder", bestProvider + ".requiresCell() = " + provider.requiresCell())
+        Log.e("GPSRecorder", bestProvider + ".requiresNetwork() = " + provider.requiresNetwork())
+        Log.e("GPSRecorder", bestProvider + ".requiresSatellite() = " + provider.requiresSatellite())
+        Log.e("GPSRecorder", bestProvider + ".supportsAltitude() = " + provider.supportsAltitude())
+        Log.e("GPSRecorder", bestProvider + ".supportsBearing() = " + provider.supportsBearing())
+        Log.e("GPSRecorder", bestProvider + ".supportsSpeed() = " + provider.supportsSpeed())
+
         parcel = Parcel.obtain()
 
         locationManager.requestLocationUpdates(bestProvider, 0, 0, this, looper)
@@ -84,22 +95,12 @@ class GPSRecorder(val locationManager: LocationManager, val looper: Looper) exte
     }
   }
 
-  def onProviderEnabled(x$1: String): Unit = {}
-  def onStatusChanged(x$1: String,x$2: Int,x$3: android.os.Bundle): Unit = {}
+  def onProviderEnabled(providerName: String): Unit = {}
+  def onStatusChanged(providerName: String, status: Int, extras: android.os.Bundle): Unit = {}
 }
 
 object GPSRecorder {
-  lazy val looper = {
-    val promise = Promise[Looper]()
-    new Thread() {
-      override def run() {
-        Looper.prepare()
-        promise.complete(Success(Looper.myLooper()))
-        Looper.loop()
-      }
-    }.start()
-    Await.result(promise.future, Duration.Inf)
-  }
+  lazy val looper = spawnLooper()
 
   def apply(ctx: Context) = {
     new GPSRecorder(ctx.getSystemService(Context.LOCATION_SERVICE).asInstanceOf[LocationManager], looper)

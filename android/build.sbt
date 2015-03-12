@@ -7,3 +7,5 @@ platformTarget in Android := "android-17"
 name := "mazda_connector"
 
 javacOptions in Compile ++= Seq("-source", "1.6", "-target", "1.6")
+
+scalacOptions in Compile ++= Seq("-feature")

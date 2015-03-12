@@ -8,6 +8,7 @@
   <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
   <!-- Used for GPS record/playback -->
+  <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -58,9 +59,9 @@
               android:exported="true">
       <intent-filter>
         <action android:name="us.insolit.connector.START_GPS_RECORD" />
-      </intent-filter>
-      <intent-filter>
         <action android:name="us.insolit.connector.STOP_GPS_RECORD" />
+        <action android:name="us.insolit.connector.START_GPS_PLAYBACK" />
+        <action android:name="us.insolit.connector.STOP_GPS_PLAYBACK" />
       </intent-filter>
     </receiver>
   </application>

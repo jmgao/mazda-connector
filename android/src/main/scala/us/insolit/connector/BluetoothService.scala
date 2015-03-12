@@ -21,14 +21,6 @@ import us.insolit.connector.gps._
 import us.insolit.connector.vr._
 
 class BluetoothService extends Service {
-  // FIXME: Move this somewhere else
-  def runOnMainThread(f: => Unit) {
-    val handler = new Handler(Looper.getMainLooper())
-    handler.post(new Runnable {
-      override def run() = f
-    })
-  }
-
   override def onCreate() {
     super.onCreate()
     Log.v("MazdaConnector", "Service started")
@@ -103,10 +95,10 @@ class BluetoothService extends Service {
                   } else if (tapCount == 2) {
                     if (!longPress) {
                       tts.speak("Starting GPS recording", TextToSpeech.QUEUE_ADD, null)
-                      GPSRecordReceiver.start(this)
+                      GPSRecordReceiver.startRecord(this)
                     } else {
                       tts.speak("Stopping GPS recording", TextToSpeech.QUEUE_ADD, null)
-                      GPSRecordReceiver.stop()
+                      GPSRecordReceiver.stopRecord()
                     }
                   } else {
                     var message = "Received keycode " + input(0) + ", "

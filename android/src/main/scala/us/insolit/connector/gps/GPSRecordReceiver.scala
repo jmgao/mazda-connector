@@ -6,11 +6,19 @@ class GPSRecordReceiver extends BroadcastReceiver {
   override def onReceive(ctx: Context, intent: Intent) {
     intent.getAction() match {
       case "us.insolit.connector.START_GPS_RECORD" => {
-        GPSRecordReceiver.start(ctx)
+        GPSRecordReceiver.startRecord(ctx)
       }
 
       case "us.insolit.connector.STOP_GPS_RECORD" => {
-        GPSRecordReceiver.stop()
+        GPSRecordReceiver.stopRecord()
+      }
+
+      case "us.insolit.connector.START_GPS_PLAYBACK" => {
+        GPSRecordReceiver.startPlayback(ctx)
+      }
+
+      case "us.insolit.connector.STOP_GPS_PLAYBACK" => {
+        GPSRecordReceiver.stopPlayback()
       }
     }
   }
@@ -18,14 +26,25 @@ class GPSRecordReceiver extends BroadcastReceiver {
 
 object GPSRecordReceiver {
   private var gpsRecorder: Option[GPSRecorder] = None
+  private var gpsPlayer: Option[GPSPlayer] = None
 
-  def start(ctx: Context) {
+  def startRecord(ctx: Context) {
     gpsRecorder = Some(GPSRecorder(ctx))
     gpsRecorder foreach { _.start() }
   }
 
-  def stop() {
+  def stopRecord() {
     gpsRecorder foreach { _.stop() }
     gpsRecorder = None
+  }
+
+  def startPlayback(ctx: Context) {
+    gpsPlayer = Some(GPSPlayer(ctx, "/sdcard/recorded.gps"))
+    gpsPlayer foreach { _.start() }
+  }
+
+  def stopPlayback() {
+    gpsPlayer foreach { _.stop() }
+    gpsPlayer = None
   }
 }
