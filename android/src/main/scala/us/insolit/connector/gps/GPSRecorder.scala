@@ -10,7 +10,7 @@ import android.util.Log
 
 import us.insolit.connector.util._
 
-class GPSRecorder(val locationManager: LocationManager, val looper: Looper) extends LocationListener {
+class GPSRecorder private (val locationManager: LocationManager, val looper: Looper) extends LocationListener {
   private var started: Boolean = false
   private var parcel: Parcel = null
 

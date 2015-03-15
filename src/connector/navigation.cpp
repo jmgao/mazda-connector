@@ -3,10 +3,53 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <future>
+
 #include <dbus/dbus.h>
 
 #include "dbus.hpp"
 #include "navigation.hpp"
+
+std::future<location>
+GetPosition(void)
+{
+    return std::async(std::launch::async,
+        [](){
+            DBusMessage *msg = dbus_message_new_method_call("com.jci.lds.data", "/com/jci/lds/data", "com.jci.lds.data", "GetPosition");
+            DBusPendingCall *pending = nullptr;
+
+            if (!dbus_connection_send_with_reply(service_bus, msg, &pending, -1)) {
+                assert(false && "failed to send message");
+            }
+
+            dbus_connection_flush(service_bus);
+            dbus_message_unref(msg);
+
+            dbus_pending_call_block(pending);
+            msg = dbus_pending_call_steal_reply(pending);
+            if (!msg) {
+               assert(false && "received null reply");
+            }
+
+            location result;
+            if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_INT32, &result.positionAccuracy,
+                                                     DBUS_TYPE_UINT64, &result.time,
+                                                     DBUS_TYPE_DOUBLE, &result.latitude,
+                                                     DBUS_TYPE_DOUBLE, &result.longitude,
+                                                     DBUS_TYPE_INT32, &result.altitude,
+                                                     DBUS_TYPE_DOUBLE, &result.heading,
+                                                     DBUS_TYPE_DOUBLE, &result.velocity,
+                                                     DBUS_TYPE_DOUBLE, &result.horizontalAccuracy,
+                                                     DBUS_TYPE_DOUBLE, &result.verticalAccuracy,
+                                                     DBUS_TYPE_INVALID)) {
+                assert(false && "failed to get result");
+            }
+
+            dbus_message_unref(msg);
+
+            return result;
+        });
+}
 
 void GuidanceChanged(
     int32_t manueverIcon,
@@ -59,69 +102,72 @@ void GuidanceChanged(
     dbus_message_unref(msg);
 }
 
-// Synchronous, should probably be fixed
-uint8_t SetHUDDisplayMsgReq(
+std::future<uint8_t>
+SetHUDDisplayMsgReq(
     uint32_t manueverIcon,
     uint16_t manueverDistance,
     uint8_t manueverDistanceUnit,
     uint16_t speedLimit,
     uint8_t speedLimitUnit)
 {
-    DBusMessage *msg = dbus_message_new_method_call("com.jci.vbs.navi", "/com/jci/vbs/navi",
-                                                    "com.jci.vbs.navi","SetHUDDisplayMsgReq");
-    DBusPendingCall *pending = nullptr;
+    return std::async(std::launch::async,
+        [=](){
+            DBusMessage *msg = dbus_message_new_method_call("com.jci.vbs.navi", "/com/jci/vbs/navi",
+                                                            "com.jci.vbs.navi","SetHUDDisplayMsgReq");
+            DBusPendingCall *pending = nullptr;
 
-    if (!msg) {
-        assert(false && "failed to create message");
-    }
+            if (!msg) {
+                assert(false && "failed to create message");
+            }
 
-    DBusMessageIter iter;
-    dbus_message_iter_init_append(msg, &iter);
+            DBusMessageIter iter;
+            dbus_message_iter_init_append(msg, &iter);
 
-    DBusMessageIter sub;
-    if (!dbus_message_iter_open_container(&iter, DBUS_TYPE_STRUCT, nullptr, &sub)) {
-       assert(false && "failed to initialize sub-iterator");
-    }
+            DBusMessageIter sub;
+            if (!dbus_message_iter_open_container(&iter, DBUS_TYPE_STRUCT, nullptr, &sub)) {
+               assert(false && "failed to initialize sub-iterator");
+            }
 
-    {
-        dbus_bool_t result = TRUE;
-        result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT32, &manueverIcon);
-        result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT16, &manueverDistance);
-        result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_BYTE, &manueverDistanceUnit);
-        result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT16, &speedLimit);
-        result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_BYTE, &speedLimitUnit);
+            {
+                dbus_bool_t result = TRUE;
+                result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT32, &manueverIcon);
+                result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT16, &manueverDistance);
+                result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_BYTE, &manueverDistanceUnit);
+                result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT16, &speedLimit);
+                result &= dbus_message_iter_append_basic(&sub, DBUS_TYPE_BYTE, &speedLimitUnit);
 
-        if (!result) {
-            assert(false && "failed to append arguments to struct");
-        }
-    }
+                if (!result) {
+                    assert(false && "failed to append arguments to struct");
+                }
+            }
 
-    if (!dbus_message_iter_close_container(&iter, &sub)) {
-        assert(false && "failed to close container");
-    }
+            if (!dbus_message_iter_close_container(&iter, &sub)) {
+                assert(false && "failed to close container");
+            }
 
-    if (!dbus_connection_send_with_reply(service_bus, msg, &pending, -1)) {
-        assert(false && "failed to send message");
-    }
+            if (!dbus_connection_send_with_reply(service_bus, msg, &pending, -1)) {
+                assert(false && "failed to send message");
+            }
 
-    dbus_connection_flush(service_bus);
-    dbus_message_unref(msg);
+            dbus_connection_flush(service_bus);
+            dbus_message_unref(msg);
 
-    dbus_pending_call_block(pending);
-    msg = dbus_pending_call_steal_reply(pending);
-    if (!msg) {
-       assert(false && "received null reply");
-    }
+            dbus_pending_call_block(pending);
+            msg = dbus_pending_call_steal_reply(pending);
+            if (!msg) {
+               assert(false && "received null reply");
+            }
 
-    uint8_t result;
-    if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_BYTE, &result,
-                                             DBUS_TYPE_INVALID)) {
-        assert(false && "failed to get result");
-    }
+            uint8_t result;
+            if (!dbus_message_get_args(msg, nullptr, DBUS_TYPE_BYTE, &result,
+                                                     DBUS_TYPE_INVALID)) {
+                assert(false && "failed to get result");
+            }
 
-    dbus_message_unref(msg);
+            dbus_message_unref(msg);
 
-    return result;
+            return result;
+        });
 }
 
 void NotificationBar_Notify(
