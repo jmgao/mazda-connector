@@ -4,7 +4,7 @@
 
 #include <future>
 
-#pragma pack(push, 4)
+#pragma pack(push, 1)
 struct location {
     enum class accuracy : int32_t {
         unknown = 0x00,

@@ -12,13 +12,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.location.Location
 import android.os.{Handler, IBinder, Looper, SystemClock}
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.KeyEvent
 
+import us.insolit.connector.bt._
 import us.insolit.connector.gps._
 import us.insolit.connector.vr._
+
+import squants.motion.KilometersPerHour
+import squants.motion.MetersPerSecond
 
 class BluetoothService extends Service {
   override def onCreate() {
@@ -44,43 +49,11 @@ class BluetoothService extends Service {
             val os = socket.getOutputStream()
 
             while (true) {
-              // length of the packet
-              val header = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-              if (is.read(header.array) != header.array.length) {
-                throw new IOException("BluetoothSocket returned short when reading header (wanted " +
-                  header.array.length + "bytes)")
-              }
-
-              val length = header.getInt
-              if (length < 0) {
-                throw new IOException("BluetoothSocket received length > 2GB, wtf")
-              }
-
-              val packet = ByteBuffer.allocate(length).order(ByteOrder.LITTLE_ENDIAN)
-              if (is.read(packet.array) != packet.array.length) {
-                throw new IOException("BluetoothSocket returned short when reading data")
-              }
-
-              val packetString = new String(packet.array(), Charset.forName("UTF-8"))
-              // Expected format: <TAG>:<MSG>
-              val fields = packetString.split(":", 2)
-              if (fields.length != 2) {
-                throw new IOException("Received malformed message: " + packet)
-              }
-
-              fields(0) match {
-                case "Input" => {
-                  val input = fields(1).split(";")
-                  if (input.length != 3) {
-                    throw new IOException("Received malformed input message: " + fields(1))
-                  }
-
-                  val keycode = input(0).toInt
-                  val longPress = input(1) == "1"
-                  val tapCount = input(2).toInt
-
-                  if (tapCount == 1) {
-                    if (longPress) {
+              val datagram = Datagram.read(is)
+              datagram match {
+                case InputDatagram(input) => {
+                  if (input.tapCount == 1) {
+                    if (input.longPress) {
                       WakeUpActivity.start(this)
                     } else {
                       val time = SystemClock.uptimeMillis();
@@ -92,8 +65,8 @@ class BluetoothService extends Service {
                       val upIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null).putExtra(Intent.EXTRA_KEY_EVENT, upEvent)
                       sendOrderedBroadcast(upIntent, null);
                     }
-                  } else if (tapCount == 2) {
-                    if (!longPress) {
+                  } else if (input.tapCount == 2) {
+                    if (!input.longPress) {
                       tts.speak("Starting GPS recording", TextToSpeech.QUEUE_ADD, null)
                       GPSRecordReceiver.startRecord(this)
                     } else {
@@ -101,22 +74,39 @@ class BluetoothService extends Service {
                       GPSRecordReceiver.stopRecord()
                     }
                   } else {
-                    var message = "Received keycode " + input(0) + ", "
-                    if (longPress) {
-                      message += "long press "
-                    }
-                    message += "count " + input(2)
+                    val message = "Received keycode %d%s count %d".format(
+                      input.keycode,
+                      if (input.longPress) "long press " else "",
+                      input.tapCount
+                    )
                     tts.speak(message, TextToSpeech.QUEUE_ADD, null)
                   }
                 }
 
-                case tag => {
-                  throw new IOException("Unhandled tag: " + tag)
+                case LocationUpdateDatagram(locationUpdate) => {
+                  val gpsProvider = MockGPSProvider.getInstance(this)
+                  if (gpsProvider.isRunning) {
+                    val location = new Location(gpsProvider.providerName)
+                    location.setAltitude(locationUpdate.altitude)
+                    location.setBearing(locationUpdate.heading.toFloat)
+                    location.setLatitude(locationUpdate.latitude)
+                    location.setLongitude(locationUpdate.longitude)
+                    val velocity = KilometersPerHour(locationUpdate.velocity)
+                    location.setSpeed((velocity to MetersPerSecond).toFloat)
+                    gpsProvider.update(location)
+                  } else {
+                    Log.e("MazdaConnector", "Received LocationUpdateDatagram while MockGPSProvider is stopped")
+                  }
+                }
+
+                case _ => {
+                  Log.e("MazdaConnector", "ERROR: received unexpected datagram with tag 0x%x".format(datagram.tag))
                 }
               }
             }
           } catch {
             case ex : Throwable => Log.e("MazdaConnector", "Received exception", ex)
+            MockGPSProvider.getInstance(this).stop()
           }
 
           socket.close()

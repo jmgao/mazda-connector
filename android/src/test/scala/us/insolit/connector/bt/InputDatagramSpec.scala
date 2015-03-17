@@ -7,9 +7,9 @@ import org.scalatest.prop.PropertyChecks
 
 class InputDatagramSpec extends FlatSpec with PropertyChecks {
   "InputDatagram" should "roundtrip" in {
-    forAll { (keycode: Int, longPress: Boolean, tapCount: Int) =>
+    forAll { (keycode: Int, tapCount: Int, longPress: Boolean) =>
       whenever (tapCount >= 1) {
-        val constructed = InputDatagram(keycode, longPress, tapCount)
+        val constructed = InputDatagram(keycode, tapCount, longPress)
         val InputDatagram(extracted) = constructed
         constructed.keycode == extracted.keycode &&
         constructed.longPress == extracted.longPress &&
@@ -26,13 +26,13 @@ class InputDatagramSpec extends FlatSpec with PropertyChecks {
     buffer.putInt(13)
     buffer.put("INPT".getBytes("UTF-8"))
     buffer.putInt(keycode)
-    buffer.put(1.toByte)
     buffer.putInt(tapCount)
+    buffer.put(1.toByte)
     val is = new ByteArrayInputStream(buffer.array)
     val dg = Datagram.read(is)
     val InputDatagram(input) = dg
     assert(input.keycode == keycode)
-    assert(input.longPress)
     assert(input.tapCount == tapCount)
+    assert(input.longPress)
   }
 }

@@ -3,11 +3,13 @@
 #include <functional>
 #include <unordered_map>
 
+#pragma pack(push, 1)
 struct gesture {
-    int keycode;
-    bool long_press;
-    int tap_count;
+    int32_t keycode;
+    int32_t tap_count;
+    char long_press;
 };
+#pragma pack(pop)
 
 class gesture_recognizer {
 public:

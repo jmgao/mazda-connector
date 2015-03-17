@@ -6,9 +6,11 @@ import android.util.Log
 import android.os.{Bundle, SystemClock}
 
 class MockGPSProvider private (locationManager: LocationManager) {
-  private val providerName = LocationManager.GPS_PROVIDER
+  val providerName = LocationManager.GPS_PROVIDER
 
   private var started = false
+
+  def isRunning() = started
 
   def start() {
     this.synchronized {
@@ -62,7 +64,10 @@ class MockGPSProvider private (locationManager: LocationManager) {
 
       val fixedLocation = new Location(location)
       fixedLocation.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos())
+      fixedLocation.setProvider(providerName)
       fixedLocation.setTime(System.currentTimeMillis())
+
+      Log.d("MockGPSProvider", "Setting mock location to %s".format(fixedLocation))
       locationManager.setTestProviderLocation(providerName, fixedLocation)
     }
   }

@@ -12,6 +12,7 @@
 
 #include <dbus/dbus.h>
 #include <linux/input.h>
+#include <sys/uio.h>
 
 #include "shared/dbus_helpers.hpp"
 #include "shared/prevent_brick.hpp"
@@ -62,17 +63,18 @@ static void handle_input(gesture input) {
     if (fd < 0) {
         printf("Can't send input to device, not yet connected\n");
     } else {
-        std::stringstream ss;
-        ss << "Input:" << input.keycode << ";" << int(input.long_press) << ";" << input.tap_count;
+        static_assert(sizeof input == 9, "struct gesture has the wrong size");
 
-        std::string command = ss.str();
+        size_t size = sizeof input + 4;
+        constexpr char tag[] = "INPT";
 
-        printf("Sending: %s\n", command.c_str());
+        struct iovec iovs[3] = {
+            { &size, sizeof size },
+            { const_cast<char *>(tag), 4 },
+            { &input, sizeof input }
+        };
 
-        std::vector<char> buf(command.length() + sizeof(uint32_t));
-        *(uint32_t *)&buf[0] = command.length();
-        memcpy(&buf[4], command.c_str(), command.length());
-        ::write(fd, &buf[0], buf.size());
+        ::writev(fd, iovs, sizeof iovs / sizeof *iovs);
     }
 }
 

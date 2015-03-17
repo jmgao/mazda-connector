@@ -1,33 +1,40 @@
 package us.insolit.connector.bt
 
-import java.io.{InputStream, IOException}
+import java.io.{DataInputStream, InputStream, IOException}
 import java.nio.{ByteBuffer, ByteOrder}
-import com.google.common.io.LittleEndianDataInputStream
 
-class Datagram protected (var tag: Int, var data: Array[Byte]) {
-  def length = 4 + data.length
+trait Datagram {
+  def tag: Int
+  def data: Array[Byte]
 
-  def encode(): ByteBuffer = {
-    val buffer = ByteBuffer.allocate(length)
-    buffer.order(ByteOrder.LITTLE_ENDIAN)
-    buffer.putInt(tag)
-    buffer.put(data)
-    buffer
+  final def encode(): ByteBuffer = {
+    ByteBuffer.allocate(data.length + 4)
+              .order(ByteOrder.LITTLE_ENDIAN)
+              .putInt(tag)
+              .put(data)
   }
 }
 
 object Datagram {
-  def read(inputStream: InputStream): Datagram = {
-    val is = new LittleEndianDataInputStream(inputStream)
-    val length = is.readInt()
+  private final class DatagramImpl(override val tag: Int, override val data: Array[Byte]) extends Datagram
 
+  def read(inputStream: InputStream): Datagram = {
+    val is = new DataInputStream(inputStream)
+
+    val lengthBuffer = new Array[Byte](4)
+    is.readFully(lengthBuffer)
+
+    val length = ByteBuffer.wrap(lengthBuffer).order(ByteOrder.LITTLE_ENDIAN).getInt()
     if (length < 0) {
       throw new IOException("Datagram received length " + length);
     }
 
-    val tag = is.readInt()
+    val dataBuffer = ByteBuffer.allocate(length).order(ByteOrder.LITTLE_ENDIAN)
+    is.readFully(dataBuffer.array())
+
+    val tag = dataBuffer.getInt()
     val data = new Array[Byte](length - 4)
-    is.readFully(data)
-    new Datagram(tag, data)
+    dataBuffer.get(data)
+    new DatagramImpl(tag, data)
   }
 }
