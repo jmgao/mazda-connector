@@ -106,6 +106,32 @@ int main(void)
     initialize_dbus();
     register_signals();
 
+    // Continually try to update the location
+    std::thread(
+        []() {
+            while (true) {
+                int fd = btfd.load();
+                if (fd >= 0) {
+                    auto location = GetPosition().get();
+                    static_assert(sizeof location == 64, "struct gesture has the wrong size");
+
+                    size_t size = sizeof location + 4;
+                    constexpr char tag[] = "GPS!";
+
+                    struct iovec iovs[3] = {
+                        { &size, sizeof size },
+                        { const_cast<char *>(tag), 4 },
+                        { &location, sizeof location }
+                    };
+
+                    ::writev(fd, iovs, sizeof iovs / sizeof *iovs);
+                }
+
+                // TODO: Find out if the car's location actually only updates at 1Hz
+                usleep(100000);
+            }
+        }).detach();
+
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
 

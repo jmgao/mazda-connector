@@ -34,14 +34,18 @@ void initialize_dbus(void)
         errx(1, "failed to register with HMI bus: %s: %s\n", error.name, error.message);
     }
 
-    std::thread service_thread([]() {
-        while (dbus_connection_read_write_dispatch(service_bus, -1));
-    });
+    #warning FIXME: This breaks method calls for some reason
+    // std::thread service_thread([]() {
+    //     while (dbus_connection_read_write_dispatch(service_bus, 1000)) {
+    //         printf("tick\n");
+    //     }
+    //     printf("what\n");
+    // });
 
     std::thread hmi_thread([]() {
         while (dbus_connection_read_write_dispatch(hmi_bus, -1));
     });
 
-    service_thread.detach();
+    // service_thread.detach();
     hmi_thread.detach();
 }

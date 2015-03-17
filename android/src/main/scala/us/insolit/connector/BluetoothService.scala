@@ -85,18 +85,20 @@ class BluetoothService extends Service {
 
                 case LocationUpdateDatagram(locationUpdate) => {
                   val gpsProvider = MockGPSProvider.getInstance(this)
-                  if (gpsProvider.isRunning) {
-                    val location = new Location(gpsProvider.providerName)
-                    location.setAltitude(locationUpdate.altitude)
-                    location.setBearing(locationUpdate.heading.toFloat)
-                    location.setLatitude(locationUpdate.latitude)
-                    location.setLongitude(locationUpdate.longitude)
-                    val velocity = KilometersPerHour(locationUpdate.velocity)
-                    location.setSpeed((velocity to MetersPerSecond).toFloat)
-                    gpsProvider.update(location)
-                  } else {
-                    Log.e("MazdaConnector", "Received LocationUpdateDatagram while MockGPSProvider is stopped")
+                  if (!gpsProvider.isRunning) {
+                    Log.e("MazdaConnector", "Received LocationUpdateDatagram, starting MockGPSProvider now")
+                    gpsProvider.start()
                   }
+
+                  val location = new Location(gpsProvider.providerName)
+                  location.setAccuracy(locationUpdate.horizontalAccuracy.toFloat) // This is bogus
+                  location.setAltitude(locationUpdate.altitude)
+                  location.setBearing(locationUpdate.heading.toFloat)
+                  location.setLatitude(locationUpdate.latitude)
+                  location.setLongitude(locationUpdate.longitude)
+                  val velocity = KilometersPerHour(locationUpdate.velocity)
+                  location.setSpeed((velocity to MetersPerSecond).toFloat)
+                  gpsProvider.update(location)
                 }
 
                 case _ => {
