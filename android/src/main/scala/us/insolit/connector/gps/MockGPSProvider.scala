@@ -1,14 +1,18 @@
 package us.insolit.connector.gps
 
+import android.app.{Notification, NotificationManager}
 import android.content.Context
 import android.location.{Criteria, Location, LocationListener, LocationManager, LocationProvider}
 import android.util.Log
 import android.os.{Bundle, SystemClock}
 
-class MockGPSProvider private (locationManager: LocationManager) {
+import us.insolit.connector.R
+
+class MockGPSProvider private (ctx: Context, locationManager: LocationManager, notificationManager: NotificationManager) {
   val providerName = LocationManager.GPS_PROVIDER
 
   private var started = false
+  private val notificationID = 1
 
   def isRunning() = started
 
@@ -39,6 +43,16 @@ class MockGPSProvider private (locationManager: LocationManager) {
       val extras = new Bundle()
       extras.putInt("satellites", 1)
       locationManager.setTestProviderStatus(providerName, LocationProvider.AVAILABLE, extras, 1000)
+
+      val notification =
+        new Notification.Builder(ctx)
+          .setContentTitle("Mazda Connector")
+          .setContentText("Mazda Connector providing GPS location")
+          .setSmallIcon(R.drawable.ic_stat_device_gps_fixed)
+          .setOngoing(true)
+          .build()
+
+      notificationManager.notify(notificationID, notification)
     }
   }
 
@@ -52,6 +66,8 @@ class MockGPSProvider private (locationManager: LocationManager) {
       started = false
       locationManager.setTestProviderEnabled(providerName, false)
       locationManager.removeTestProvider(providerName)
+
+      notificationManager.cancel(notificationID)
     }
   }
 
@@ -82,7 +98,8 @@ object MockGPSProvider {
         case Some(x) => x
         case None => {
           val locationManager = ctx.getSystemService(Context.LOCATION_SERVICE).asInstanceOf[LocationManager]
-          val newInstance = new MockGPSProvider(locationManager)
+          val notificationManager = ctx.getSystemService(Context.NOTIFICATION_SERVICE).asInstanceOf[NotificationManager]
+          val newInstance = new MockGPSProvider(ctx, locationManager, notificationManager)
           instance = Some(newInstance)
           newInstance
         }
