@@ -64,5 +64,16 @@
         <action android:name="us.insolit.connector.STOP_GPS_PLAYBACK" />
       </intent-filter>
     </receiver>
+
+
+    <meta-data
+      android:name="xposedmodule"
+      android:value="true" />
+    <meta-data
+      android:name="xposeddescription"
+      android:value="Override the compass sensor with data from the car" />
+    <meta-data
+      android:name="xposedminversion"
+      android:value="30" />
   </application>
 </manifest>

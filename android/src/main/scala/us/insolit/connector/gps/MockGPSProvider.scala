@@ -1,7 +1,8 @@
 package us.insolit.connector.gps
 
 import android.app.{Notification, NotificationManager}
-import android.content.Context
+import android.content.{Context, Intent}
+import android.hardware.GeomagneticField
 import android.location.{Criteria, Location, LocationListener, LocationManager, LocationProvider}
 import android.util.Log
 import android.os.{Bundle, SystemClock}
@@ -82,6 +83,17 @@ class MockGPSProvider private (ctx: Context, locationManager: LocationManager, n
       fixedLocation.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos())
       fixedLocation.setProvider(providerName)
       fixedLocation.setTime(System.currentTimeMillis())
+
+
+      // TODO: Figure out if this is android, the car, or my bug
+      val correctedBearing = (location.getBearing() + 180.0f) % 360.0f
+      fixedLocation.setBearing(correctedBearing)
+
+      // Uncorrect for magnetic declination
+      val geomagneticField = new GeomagneticField(location.getLatitude().toFloat, location.getLongitude().toFloat, location.getAltitude().toFloat, System.currentTimeMillis())
+      val magneticBearing: Float = (correctedBearing - geomagneticField.getDeclination()) % 360.0f
+      val bearingIntent = new Intent("us.insolit.connector.BEARING").putExtra("bearing", magneticBearing)
+      ctx.sendBroadcast(bearingIntent)
 
       Log.d("MockGPSProvider", "Setting mock location to %s".format(fixedLocation))
       locationManager.setTestProviderLocation(providerName, fixedLocation)
