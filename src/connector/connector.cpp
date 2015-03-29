@@ -130,7 +130,7 @@ int main(void)
                 }
 
                 // TODO: Find out if the car's location actually only updates at 1Hz
-                usleep(100000);
+                usleep(500000);
             }
         }).detach();
 
