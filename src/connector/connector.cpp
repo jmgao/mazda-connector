@@ -156,6 +156,7 @@ int main(void)
         };
 
         poll(&pfd, 1, -1);
+        printf("Socket was closed, disconnecting device\n");
         bluetooth_disconnect(device_id, service_id);
         btfd.store(-1);
         ::close(fd);

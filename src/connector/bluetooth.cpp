@@ -218,7 +218,7 @@ void handle_bluetooth_connection_response(DBusMessage *msg)
             break;
 
         case 104:
-            printf("service not found? (check BdsConfiguration.xml\n");
+            printf("service not found? (check BdsConfiguration.xml)\n");
             break;
 
         case 107:

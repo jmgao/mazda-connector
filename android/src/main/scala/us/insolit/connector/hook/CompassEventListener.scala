@@ -72,7 +72,7 @@ class CompassEventListener(listener: SensorEventListener) extends SensorEventLis
             val origZ = event.values(2)
             val magnitude = Math.sqrt(origX * origX + origY * origY + origZ * origZ)
 
-            // NOTE: These values are rotation (i.e. clockwise), not bearing
+            // NOTE: These values are rotation (i.e. counterclockwise), not bearing
             // North   (0): x = 0, z = -1
             // West  (90): x = 1, z = 0
             // South (180): x = 0, z = 1

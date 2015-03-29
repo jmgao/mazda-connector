@@ -29,8 +29,7 @@ final class LocationUpdateDatagram private (val accuracy: Int,
 }
 
 object LocationUpdateDatagram {
-  // 'GPS!'
-  val tag = 0x21535047
+  val tag = 0x21535047 // 'GPS!'
   val length = 64
 
   def apply(accuracy: Int,
@@ -56,10 +55,11 @@ object LocationUpdateDatagram {
   }
 
   def unapply(dg: Datagram): Option[LocationUpdateDatagram] = {
+
     if (dg.tag != tag) {
       None
     } else if (dg.data.length != length) {
-      throw new IOException("Incorrect length for LocationUpdateDatagram")
+      throw new IOException("Incorrect length for LocationUpdateDatagram (expected %d, received %d)".format(length, dg.data.length))
     } else {
       val buffer = ByteBuffer.wrap(dg.data).order(ByteOrder.LITTLE_ENDIAN)
       Some(
