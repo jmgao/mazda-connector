@@ -48,6 +48,11 @@ GetPosition(void)
 
             dbus_message_unref(msg);
 
+            if (result.latitude == 0.0 && result.longitude == 0.0) {
+                // Presumably the car is not actually in the Atlantic Ocean
+                return nullptr;
+            }
+
             // Fix the bearing returned by the car
             result.heading += 180.0;
             if (result.heading >= 360.0) {
