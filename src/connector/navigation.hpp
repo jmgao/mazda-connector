@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <future>
+#include <memory>
 
 #pragma pack(push, 1)
 struct location {
@@ -25,7 +26,7 @@ struct location {
 };
 #pragma pack(pop)
 
-std::future<location> GetPosition(void);
+std::future<std::unique_ptr<location>> GetPosition(void);
 
 void GuidanceChanged(
     int32_t manueverIcon,

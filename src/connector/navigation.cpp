@@ -4,22 +4,23 @@
 #include <stdlib.h>
 
 #include <future>
+#include <memory>
 
 #include <dbus/dbus.h>
 
 #include "dbus.hpp"
 #include "navigation.hpp"
 
-std::future<location>
+std::future<std::unique_ptr<location>>
 GetPosition(void)
 {
     return std::async(std::launch::async,
-        [](){
+        []() -> std::unique_ptr<location> {
             DBusMessage *msg = dbus_message_new_method_call("com.jci.lds.data", "/com/jci/lds/data", "com.jci.lds.data", "GetPosition");
             DBusPendingCall *pending = nullptr;
 
             if (!dbus_connection_send_with_reply(service_bus, msg, &pending, -1)) {
-                assert(false && "failed to send message");
+                return nullptr;
             }
 
             dbus_connection_flush(service_bus);
@@ -28,7 +29,7 @@ GetPosition(void)
             dbus_pending_call_block(pending);
             msg = dbus_pending_call_steal_reply(pending);
             if (!msg) {
-               assert(false && "received null reply");
+                return nullptr;
             }
 
             location result;
@@ -42,12 +43,12 @@ GetPosition(void)
                                                      DBUS_TYPE_DOUBLE, &result.horizontalAccuracy,
                                                      DBUS_TYPE_DOUBLE, &result.verticalAccuracy,
                                                      DBUS_TYPE_INVALID)) {
-                assert(false && "failed to get result");
+                return nullptr;
             }
 
             dbus_message_unref(msg);
 
-            return result;
+            return std::unique_ptr<location>(new location(result));
         });
 }
 

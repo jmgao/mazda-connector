@@ -182,18 +182,27 @@ static void __attribute__((noreturn)) loop(void)
         err(1, "failed to add input fd to epoll set");
     }
 
-    constexpr size_t buffer_size = 64;
+    constexpr size_t buffer_size = sizeof (struct input_event) * 16;
     std::vector<struct iovec> iovecs;
     iovecs.reserve(buffer_size);
-    while (epoll_wait(epfd, &event, 1, -1) >= 0) {
+    while (epoll_wait(epfd, &event, 1, -1) >= 0 || errno == EINTR) {
         switch (events(event.data.u64)) {
             case events::input:
             {
                 iovecs.clear();
                 struct input_event ev_buf[buffer_size];
                 ssize_t bytes_read = ::read(infd, &ev_buf, sizeof ev_buf);
-                if (bytes_read <= 0 || bytes_read % sizeof(struct input_event) != 0) {
+
+                if (bytes_read <= 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
+
                     err(1, "failed to read event");
+                }
+
+                if (bytes_read % sizeof(struct input_event) != 0) {
+                    err(1, "read extra bytes");
                 }
 
                 ssize_t events_read = bytes_read / sizeof (struct input_event);
@@ -250,6 +259,13 @@ int main(int argc, const char *argv[])
         // Console navigation
         // KEY_R,
     };
+
+    struct sigaction sigact;
+    memset(&sigact, 0, sizeof sigact);
+    sigact.sa_handler = SIG_IGN;
+    sigact.sa_flags = SA_RESTART;
+
+    sigaction(EINTR, &sigact, nullptr);
 
     matchers.push_back(
         [hmi_bus, &captured_keys] (const struct input_event *ev) {
