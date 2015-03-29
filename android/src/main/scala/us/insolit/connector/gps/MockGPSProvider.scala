@@ -84,14 +84,9 @@ class MockGPSProvider private (ctx: Context, locationManager: LocationManager, n
       fixedLocation.setProvider(providerName)
       fixedLocation.setTime(System.currentTimeMillis())
 
-
-      // TODO: Figure out if this is android, the car, or my bug
-      val correctedBearing = (location.getBearing() + 180.0f) % 360.0f
-      fixedLocation.setBearing(correctedBearing)
-
       // Uncorrect for magnetic declination
       val geomagneticField = new GeomagneticField(location.getLatitude().toFloat, location.getLongitude().toFloat, location.getAltitude().toFloat, System.currentTimeMillis())
-      val magneticBearing: Float = (correctedBearing - geomagneticField.getDeclination()) % 360.0f
+      val magneticBearing: Float = (location.getBearing() - geomagneticField.getDeclination()) % 360.0f
       val bearingIntent = new Intent("us.insolit.connector.BEARING").putExtra("bearing", magneticBearing)
       ctx.sendBroadcast(bearingIntent)
 

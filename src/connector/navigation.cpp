@@ -48,6 +48,12 @@ GetPosition(void)
 
             dbus_message_unref(msg);
 
+            // Fix the bearing returned by the car
+            result.heading += 180.0;
+            if (result.heading >= 360.0) {
+                result.heading -= 360.0;
+            }
+
             return std::unique_ptr<location>(new location(result));
         });
 }
